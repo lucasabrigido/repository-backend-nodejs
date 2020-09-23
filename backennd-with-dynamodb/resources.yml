@@ -1,0 +1,53 @@
+service:
+    name: ${opt:cfg}-template-resources
+
+custom:
+    table: '${opt:cfg}-table'
+    IndexName: 'index'
+
+provider:
+    name: aws
+    runtime: nodejs12.x
+    stage: v1
+
+resources:
+  Resources:
+    TableDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: props1
+            AttributeType: S
+          -
+            AttributeName: props2
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          -
+            IndexName: ${self:custom.IndexName}
+            KeySchema:
+              -
+                AttributeName: props2
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        KeySchema:
+          -
+            AttributeName: props1
+            KeyType: HASH
+        TableName: ${self:custom.table}
+
+  Outputs:
+    TableTableArn:
+        Value:
+            Fn::GetAtt:
+                - TableDynamoDBTable
+                - Arn
+        Export:
+            Name: ${opt:cfg}-integracao-TableTableArn
+    indexNameTableArn:
+      Value:
+        !Join [ "/", [ !GetAtt TableDynamoDBTable.Arn, 'index', '${self:custom.IndexName}' ] ]
+      Export:
+        Name: ${opt:cfg}-indexNameTableArn
